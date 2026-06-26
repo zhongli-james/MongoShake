@@ -331,11 +331,12 @@ func (bw *BulkWriter) doUpdate(database, collection string, metadata bson.E, opl
 					// Time-series bucket update with column-store binary diff (e.g., sdata.b)
 					// cannot be converted to normal $set/$unset. Fall back to replay with 'applyOps' command.
 					if strings.HasPrefix(collection, utils.VarSystemBucketsPrefix) {
-						l.Logger.Infof("bulk_writer fall back to applyOps for time-series bucket update on %s.%s: %v",
-							database, collection, oplogErr)
+						l.Logger.Infof("bulk_writer fall back to applyOps for time-series bucket update on %s.%s",
+							database, collection)
 						if applyErr := replayUpdateViaApplyOps(bw.conn.Client, log.original.partialLog); applyErr != nil {
 							return applyErr
 						}
+						// applyOps succeeded; skip adding to models
 						continue
 					}
 					l.Logger.Errorf("doUpdate run failed err[%v] org_doc[%v]", oplogErr, log.original.partialLog)
@@ -387,6 +388,11 @@ func (bw *BulkWriter) doUpdate(database, collection string, metadata bson.E, opl
 	}
 
 	l.Logger.Debugf("bulk_writer: update models len %v", len(models))
+
+	if len(models) == 0 {
+		// all oplogs were replayed via applyOps (e.g., time-series bucket updates)
+		return nil
+	}
 
 	opts := options.BulkWrite()
 	if conf.Options.IncrSyncBypassDocumentValidation {

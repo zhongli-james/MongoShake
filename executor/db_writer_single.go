@@ -294,8 +294,8 @@ func (sw *SingleWriter) doUpdate(database, collection string, metadata bson.E, o
 					// Time-series bucket update with column-store binary diff (e.g., sdata.b)
 					// cannot be converted to normal $set/$unset. Fall back to applyOps replay.
 					if strings.HasPrefix(collection, utils.VarSystemBucketsPrefix) {
-						l.Logger.Infof("fall back to applyOps for time-series bucket update on %s.%s: %v",
-							database, collection, oplogErr)
+						l.Logger.Infof("fall back to applyOps for time-series bucket update on %s.%s",
+							database, collection)
 						if applyErr := replayUpdateViaApplyOps(sw.conn.Client, log.original.partialLog); applyErr != nil {
 							return applyErr
 						}

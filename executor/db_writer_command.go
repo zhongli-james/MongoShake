@@ -282,11 +282,12 @@ func (cw *CommandWriter) doUpdate(database, collection string, metadata bson.E, 
 				// Time-series bucket update with column-store binary diff (e.g., sdata.b)
 				// cannot be converted to normal $set/$unset. Fall back to applyOps replay.
 				if strings.HasPrefix(collection, utils.VarSystemBucketsPrefix) {
-					l.Logger.Infof("command_writer: fall back to applyOps for time-series bucket update on %s.%s: %v",
-						database, collection, transErr)
+					l.Logger.Infof("command_writer: fall back to applyOps for time-series bucket update on %s.%s",
+						database, collection)
 					if applyErr := replayUpdateViaApplyOps(cw.conn.Client, log.original.partialLog); applyErr != nil {
 						return applyErr
 					}
+					// applyOps succeeded; skip adding to updates
 					continue
 				}
 				l.Logger.Errorf("doUpdate run failed err[%v] org_doc[%v]", transErr, log.original.partialLog)
